@@ -1,0 +1,178 @@
+blueprint:
+  name: Zonwering automatisch (weerstation)
+  description: >
+    Rolt de zonwering UIT bij felle én warme zon (droog en windstil), en trekt
+    'm IN bij te harde windstoten, regen, of als de zon weg is.
+
+    Veiligheid (wind/regen) reageert direct. Uitrollen heeft een instelbare
+    wachttijd zodat een kort zonnetje of net-na-wind niet meteen uitrolt.
+    Intrekken bij weinig zon gebeurt onder de helft van de zon-drempel
+    (hysterese), zodat de zonwering niet gaat "pompen".
+
+    AANNAME: voor jouw cover betekent OPEN = uitrollen/zakken en
+    CLOSE = intrekken/omhoog. Werkt jouw motor andersom, kies dan een cover
+    waarvoor dit klopt of pas de automation na het aanmaken aan.
+  domain: automation
+  author: JOUW_GITHUB_USERNAME
+  input:
+    cover_entity:
+      name: Zonwering
+      description: De cover-entity van je zonwering.
+      selector:
+        entity:
+          filter:
+            - domain: cover
+    solar_entity:
+      name: Zonstraling-sensor
+      description: Sensor met de zonstraling in W/m².
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: irradiance
+    temperature_entity:
+      name: Temperatuur-sensor
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: temperature
+    wind_entity:
+      name: Windstoot-sensor
+      description: Gebruik bij voorkeur de windstoot (gust), niet de gemiddelde wind.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+              device_class: wind_speed
+    rain_entity:
+      name: Regen-sensor
+      description: Regenintensiteit (mm/u). Boven 0 = het regent.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+    sun_threshold:
+      name: Zon-drempel
+      description: Uitrollen boven deze straling.
+      default: 600
+      selector:
+        number:
+          min: 100
+          max: 1000
+          step: 25
+          unit_of_measurement: "W/m²"
+          mode: slider
+    temp_threshold:
+      name: Temperatuur-drempel
+      description: Uitrollen alleen als het warmer is dan dit.
+      default: 22
+      selector:
+        number:
+          min: 10
+          max: 35
+          step: 1
+          unit_of_measurement: "°C"
+          mode: slider
+    wind_threshold:
+      name: Wind-drempel
+      description: Boven deze windstoot direct intrekken (veiligheid).
+      default: 35
+      selector:
+        number:
+          min: 10
+          max: 80
+          step: 5
+          unit_of_measurement: "km/h"
+          mode: slider
+    extend_delay:
+      name: Wachttijd voor uitrollen (minuten)
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 1
+          unit_of_measurement: min
+          mode: slider
+
+mode: restart
+max_exceeded: silent
+
+trigger_variables:
+  solar_entity: !input solar_entity
+  temperature_entity: !input temperature_entity
+  wind_entity: !input wind_entity
+  rain_entity: !input rain_entity
+  sun_threshold: !input sun_threshold
+  temp_threshold: !input temp_threshold
+  wind_threshold: !input wind_threshold
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input wind_entity
+    above: !input wind_threshold
+    id: protect_wind
+  - platform: numeric_state
+    entity_id: !input rain_entity
+    above: 0
+    for: "00:01:00"
+    id: protect_rain
+  - platform: template
+    value_template: >
+      {{ states(solar_entity)|float(0) > sun_threshold
+         and states(temperature_entity)|float(0) > temp_threshold
+         and states(wind_entity)|float(999) < wind_threshold
+         and states(rain_entity)|float(0) == 0
+         and is_state('sun.sun','above_horizon') }}
+    for:
+      minutes: !input extend_delay
+    id: extend
+  - platform: template
+    value_template: >
+      {{ is_state('sun.sun','below_horizon')
+         or states(solar_entity)|float(999) < sun_threshold * 0.5 }}
+    for: "00:20:00"
+    id: retract_sun
+
+action:
+  - choose:
+      # 1) Veiligheid: wind of regen -> intrekken (altijd, hoogste prioriteit)
+      - conditions:
+          - condition: trigger
+            id:
+              - protect_wind
+              - protect_rain
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input cover_entity
+                state: "closed"
+        sequence:
+          - service: cover.close_cover
+            target:
+              entity_id: !input cover_entity
+      # 2) Uitrollen bij felle warme zon
+      - conditions:
+          - condition: trigger
+            id: extend
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: !input cover_entity
+                state: "open"
+        sequence:
+          - service: cover.open_cover
+            target:
+              entity_id: !input cover_entity
+      # 3) Intrekken als de zon weg is
+      - conditions:
+          - condition: trigger
+            id: retract_sun
+          - condition: state
+            entity_id: !input cover_entity
+            state: "open"
+        sequence:
+          - service: cover.close_cover
+            target:
+              entity_id: !input cover_entity

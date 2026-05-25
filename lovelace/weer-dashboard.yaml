@@ -1,0 +1,191 @@
+# =============================================================================
+#  Meteotemplate weer-dashboard
+# =============================================================================
+#  Plak dit in een nieuw dashboard:
+#    Instellingen -> Dashboards -> + Dashboard -> (open) -> rechtsboven 3 puntjes
+#    -> "Onbewerkte configuratie-editor" -> alles vervangen door onderstaande.
+#
+#  VEREIST: de "ApexCharts Card" (via HACS -> Frontend -> "apexcharts-card").
+#  De gauges werken zonder HACS. Zie onderaan voor een variant zonder ApexCharts.
+#
+#  LET OP de entity-namen: deze gaan uit van integratie-naam "Meteotemplate"
+#  (prefix sensor.meteotemplate_...). Gaf je 'm een andere naam? Pas de prefix aan.
+# =============================================================================
+title: Weer
+views:
+  - title: Weerstation
+    path: weer
+    icon: mdi:weather-partly-cloudy
+    cards:
+
+      # --- Nu: gauges -------------------------------------------------------
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            entity: sensor.meteotemplate_temperature
+            name: Temperatuur
+            needle: true
+            min: -10
+            max: 40
+            severity:
+              green: 0
+              yellow: 22
+              red: 30
+          - type: gauge
+            entity: sensor.meteotemplate_uv_index
+            name: UV
+            needle: true
+            min: 0
+            max: 11
+            severity:
+              green: 0
+              yellow: 3
+              red: 6
+          - type: gauge
+            entity: sensor.meteotemplate_wind_gust
+            name: Windstoot
+            needle: true
+            min: 0
+            max: 80
+            severity:
+              green: 0
+              yellow: 25
+              red: 35
+
+      # --- Wind -------------------------------------------------------------
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Wind (24 uur)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        span:
+          end: minute
+        yaxis:
+          - min: 0
+            apex_config:
+              forceNiceScale: true
+        series:
+          - entity: sensor.meteotemplate_wind_speed
+            name: Wind
+            stroke_width: 2
+            group_by:
+              func: avg
+              duration: 10min
+          - entity: sensor.meteotemplate_wind_gust
+            name: Windstoot
+            stroke_width: 2
+            group_by:
+              func: max
+              duration: 10min
+        apex_config:
+          annotations:
+            yaxis:
+              - y: 35
+                borderColor: "#e53935"
+                strokeDashArray: 4
+                label:
+                  text: Wind-drempel
+                  style:
+                    color: "#ffffff"
+                    background: "#e53935"
+
+      # --- Zon --------------------------------------------------------------
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Zon (24 uur)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - id: rad
+            min: 0
+            apex_config:
+              title:
+                text: W/m²
+          - id: uv
+            opposite: true
+            min: 0
+            max: 12
+            apex_config:
+              title:
+                text: UV
+        series:
+          - entity: sensor.meteotemplate_solar_radiation
+            name: Straling
+            yaxis_id: rad
+            type: area
+            opacity: 0.3
+            stroke_width: 2
+            group_by:
+              func: avg
+              duration: 10min
+          - entity: sensor.meteotemplate_uv_index
+            name: UV
+            yaxis_id: uv
+            stroke_width: 2
+            group_by:
+              func: max
+              duration: 10min
+
+      # --- Regen ------------------------------------------------------------
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Regen (24 uur)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - id: rate
+            min: 0
+            apex_config:
+              title:
+                text: mm/u
+          - id: sum
+            opposite: true
+            min: 0
+            apex_config:
+              title:
+                text: mm
+        series:
+          - entity: sensor.meteotemplate_rain_rate
+            name: Intensiteit
+            yaxis_id: rate
+            type: column
+            group_by:
+              func: max
+              duration: 30min
+          - entity: sensor.meteotemplate_rain_today
+            name: Totaal vandaag
+            yaxis_id: sum
+            type: line
+            stroke_width: 2
+
+      # --- Zonwering + extra waarden ----------------------------------------
+      - type: entities
+        title: Zonwering & details
+        state_color: true
+        entities:
+          # Vervang dit door jouw echte zonwering-cover:
+          - entity: cover.zonwering
+          - type: divider
+          - entity: sensor.meteotemplate_wind_direction
+          - entity: sensor.meteotemplate_humidity
+          - entity: sensor.meteotemplate_pressure
+          - entity: sensor.meteotemplate_dew_point
+
+# =============================================================================
+#  GEEN HACS / ApexCharts? Vervang elke "custom:apexcharts-card" door bijv:
+#
+#    - type: history-graph
+#      hours_to_show: 24
+#      title: Wind
+#      entities:
+#        - sensor.meteotemplate_wind_speed
+#        - sensor.meteotemplate_wind_gust
+#
+#  Minder mooi, maar werkt out-of-the-box.
+# =============================================================================

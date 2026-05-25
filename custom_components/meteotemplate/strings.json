@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Meteotemplate Weather Station",
+        "description": "Enter the URL of the Station Feed JSON output of a Meteotemplate site, e.g. https://example.nl/meteotemplate/plugins/stationFeed/index.php?format=json",
+        "data": {
+          "url": "Station Feed URL",
+          "name": "Name",
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to that URL.",
+      "invalid_data": "The URL responded, but it is not a valid Meteotemplate feed (no 'current_conditions')."
+    },
+    "abort": {
+      "already_configured": "This URL is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Meteotemplate options",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}
