@@ -13,7 +13,7 @@ blueprint:
     CLOSE = intrekken/omhoog. Werkt jouw motor andersom, kies dan een cover
     waarvoor dit klopt of pas de automation na het aanmaken aan.
   domain: automation
-  author: JOUW_GITHUB_USERNAME
+  author: sysmx
   input:
     cover_entity:
       name: Zonwering
