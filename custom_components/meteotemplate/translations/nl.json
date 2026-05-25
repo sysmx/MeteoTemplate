@@ -3,11 +3,16 @@
     "step": {
       "user": {
         "title": "Meteotemplate weerstation",
-        "description": "Voer de URL in van de Station Feed JSON-output van een Meteotemplate-site, bijv. https://voorbeeld.nl/meteotemplate/plugins/stationFeed/index.php?format=json",
+        "description": "Voer de URL in van de Station Feed JSON-output van je Meteotemplate-site.",
         "data": {
           "url": "Station Feed URL",
           "name": "Naam",
           "scan_interval": "Ophaalinterval (seconden)"
+        },
+        "data_description": {
+          "url": "De volledige URL die eindigt op de Station Feed JSON-output van je Meteotemplate-site.",
+          "name": "Naam zoals weergegeven in Home Assistant.",
+          "scan_interval": "Hoe vaak de feed wordt opgehaald."
         }
       }
     },
@@ -25,6 +30,9 @@
         "title": "Meteotemplate-opties",
         "data": {
           "scan_interval": "Ophaalinterval (seconden)"
+        },
+        "data_description": {
+          "scan_interval": "Hoe vaak de feed wordt opgehaald."
         }
       }
     }
