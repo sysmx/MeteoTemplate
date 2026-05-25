@@ -1,0 +1,364 @@
+title: Weerstation
+views:
+  - title: Weerstation
+    path: weer
+    icon: mdi:weather-partly-cloudy
+    type: sections
+    max_columns: 3
+    sections:
+
+      # ============ SECTIE: NU (kerncijfers) ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Nu
+            heading_style: title
+          - type: glance
+            show_name: true
+            show_icon: true
+            show_state: true
+            columns: 3
+            entities:
+              - entity: sensor.meteo_waskolkweg_temperature
+                name: Temp
+              - entity: sensor.meteo_waskolkweg_relative_humidity
+                name: Vocht
+              - entity: sensor.meteo_waskolkweg_pressure
+                name: Druk
+              - entity: sensor.meteo_waskolkweg_wind_speed
+                name: Wind
+              - entity: sensor.meteo_waskolkweg_solar_radiation
+                name: Zon
+              - entity: sensor.meteo_waskolkweg_rain_today
+                name: Regen
+          - type: horizontal-stack
+            cards:
+              - type: gauge
+                entity: sensor.meteo_waskolkweg_temperature
+                name: Temperatuur
+                needle: true
+                min: -10
+                max: 40
+                severity:
+                  green: 0
+                  yellow: 22
+                  red: 30
+              - type: gauge
+                entity: sensor.meteo_waskolkweg_relative_humidity
+                name: Vocht
+                needle: true
+                min: 0
+                max: 100
+                severity:
+                  red: 0
+                  yellow: 30
+                  green: 40
+          - type: horizontal-stack
+            cards:
+              - type: gauge
+                entity: sensor.meteo_waskolkweg_uv_index
+                name: UV
+                needle: true
+                min: 0
+                max: 11
+                severity:
+                  green: 0
+                  yellow: 3
+                  red: 6
+              - type: gauge
+                entity: sensor.meteo_waskolkweg_wind_gust
+                name: Windstoot
+                needle: true
+                min: 0
+                max: 80
+                severity:
+                  green: 0
+                  yellow: 25
+                  red: 35
+
+      # ============ SECTIE: TEMPERATUUR & LUCHT ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Temperatuur & lucht
+            heading_style: title
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Temperatuur (48u)
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            yaxis:
+              - apex_config:
+                  title:
+                    text: °C
+            series:
+              - entity: sensor.meteo_waskolkweg_temperature
+                name: Temperatuur
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 15min
+              - entity: sensor.meteo_waskolkweg_apparent_temperature
+                name: Gevoel
+                stroke_width: 2
+                opacity: 0.7
+                group_by:
+                  func: avg
+                  duration: 15min
+              - entity: sensor.meteo_waskolkweg_dewpoint
+                name: Dauwpunt
+                stroke_width: 2
+                opacity: 0.5
+                group_by:
+                  func: avg
+                  duration: 15min
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Luchtvochtigheid & druk (48u)
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            yaxis:
+              - id: hum
+                min: 0
+                max: 100
+                apex_config:
+                  title:
+                    text: "%"
+              - id: prs
+                opposite: true
+                apex_config:
+                  title:
+                    text: hPa
+            series:
+              - entity: sensor.meteo_waskolkweg_relative_humidity
+                name: Vocht
+                yaxis_id: hum
+                type: area
+                opacity: 0.2
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 15min
+              - entity: sensor.meteo_waskolkweg_pressure
+                name: Druk
+                yaxis_id: prs
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 15min
+
+      # ============ SECTIE: WIND ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Wind
+            heading_style: title
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Wind & windstoten (24u)
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            yaxis:
+              - min: 0
+                apex_config:
+                  title:
+                    text: km/h
+            series:
+              - entity: sensor.meteo_waskolkweg_wind_speed
+                name: Wind
+                type: area
+                opacity: 0.25
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 10min
+              - entity: sensor.meteo_waskolkweg_wind_gust
+                name: Windstoot
+                stroke_width: 2
+                group_by:
+                  func: max
+                  duration: 10min
+          - type: entities
+            title: Windrichting
+            entities:
+              - entity: sensor.meteo_waskolkweg_wind_direction
+                name: Richting
+              - entity: sensor.meteo_waskolkweg_bearing_degrees
+                name: Graden
+
+      # ============ SECTIE: ZON & UV ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Zon & UV
+            heading_style: title
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Zonnestraling & UV (24u)
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            yaxis:
+              - id: rad
+                min: 0
+                apex_config:
+                  title:
+                    text: W/m²
+              - id: uv
+                opposite: true
+                min: 0
+                max: 12
+                apex_config:
+                  title:
+                    text: UV
+            series:
+              - entity: sensor.meteo_waskolkweg_solar_radiation
+                name: Straling
+                yaxis_id: rad
+                type: area
+                opacity: 0.3
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 10min
+              - entity: sensor.meteo_waskolkweg_uv_index
+                name: UV
+                yaxis_id: uv
+                stroke_width: 2
+                group_by:
+                  func: max
+                  duration: 10min
+
+      # ============ SECTIE: REGEN ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Regen
+            heading_style: title
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Regen (48u)
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            yaxis:
+              - id: rate
+                min: 0
+                apex_config:
+                  title:
+                    text: mm/u
+              - id: sum
+                opposite: true
+                min: 0
+                apex_config:
+                  title:
+                    text: mm
+            series:
+              - entity: sensor.meteo_waskolkweg_rain_rate
+                name: Intensiteit
+                yaxis_id: rate
+                type: column
+                group_by:
+                  func: max
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_rain_today
+                name: Totaal vandaag
+                yaxis_id: sum
+                type: line
+                stroke_width: 2
+
+      # ============ SECTIE: BODEM & BLAD ============
+      - type: grid
+        cards:
+          - type: heading
+            heading: Bodem & blad
+            heading_style: title
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Bodemvocht (48u)
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            yaxis:
+              - min: 0
+                max: 100
+                apex_config:
+                  title:
+                    text: "%"
+            series:
+              - entity: sensor.meteo_waskolkweg_soil_moisture1
+                name: Vocht 1
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_moisture2
+                name: Vocht 2
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_moisture3
+                name: Vocht 3
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_moisture4
+                name: Vocht 4
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Bodemtemperatuur (48u)
+              show_states: true
+              colorize_states: true
+            graph_span: 48h
+            yaxis:
+              - apex_config:
+                  title:
+                    text: °C
+            series:
+              - entity: sensor.meteo_waskolkweg_soil_temperature1
+                name: Temp 1
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_temperature2
+                name: Temp 2
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_temperature3
+                name: Temp 3
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+              - entity: sensor.meteo_waskolkweg_soil_temperature4
+                name: Temp 4
+                stroke_width: 2
+                group_by:
+                  func: avg
+                  duration: 30min
+          - type: glance
+            title: Blad
+            entities:
+              - entity: sensor.meteo_waskolkweg_leaf_wetness1
+                name: Bladnatheid
+              - entity: sensor.meteo_waskolkweg_leaf_temperature1
+                name: Bladtemp

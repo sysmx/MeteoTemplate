@@ -1,0 +1,100 @@
+alias: Markiezen automatisch op weerstation
+description: >
+  RICHTING (geverifieerd via hardware-test): open_cover = INKLAPPEN (intrekken),
+  close_cover = UITKLAPPEN (uitvallen/schaduw).
+  Schaduw bij felle warme zon -> uitklappen. Inklappen bij wind, regen of als de
+  straling onder de intrek-drempel zakt. Veiligheid (wind/regen) heeft voorrang en
+  klapt altijd in. Reageert ook na herstart en zodra 'automatisch' aangaat.
+mode: restart
+max_exceeded: silent
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.meteo_waskolkweg_wind_gust
+    above: input_number.markies_wind_drempel
+    id: protect_wind
+  - platform: numeric_state
+    entity_id: sensor.meteo_waskolkweg_rain_rate
+    above: 0
+    for:
+      minutes: "{{ states('input_number.markies_regen_wachttijd')|int(1) }}"
+    id: protect_rain
+  - platform: state
+    entity_id: binary_sensor.markies_mag_uitvallen
+    to: "on"
+    for:
+      minutes: "{{ states('input_number.markies_uitval_wachttijd')|int(10) }}"
+    id: shade
+  - platform: state
+    entity_id: binary_sensor.markies_mag_intrekken
+    to: "on"
+    for:
+      minutes: "{{ states('input_number.markies_intrek_wachttijd')|int(20) }}"
+    id: unshade
+  - platform: homeassistant
+    event: start
+    id: startup
+  - platform: state
+    entity_id: input_boolean.markies_auto
+    to: "on"
+    id: auto_on
+action:
+  - choose:
+      # 1) VEILIGHEID: wind of regen -> INKLAPPEN (open_cover)
+      - conditions:
+          - condition: trigger
+            id:
+              - protect_wind
+              - protect_rain
+        sequence:
+          - service: cover.open_cover
+            target:
+              entity_id: [cover.rolluik_1, cover.rolluik_2]
+          - delay: "00:00:35"
+      # 2) SCHADUW: uitklappen (close_cover)
+      - conditions:
+          - condition: trigger
+            id: shade
+        sequence:
+          - service: cover.close_cover
+            target:
+              entity_id: [cover.rolluik_1, cover.rolluik_2]
+          - delay: "00:00:35"
+      # 3) INTREKKEN (geen/weinig zon): inklappen (open_cover)
+      - conditions:
+          - condition: trigger
+            id: unshade
+        sequence:
+          - service: cover.open_cover
+            target:
+              entity_id: [cover.rolluik_1, cover.rolluik_2]
+          - delay: "00:00:35"
+      # 4) Herstart of 'automatisch' aangezet -> direct juiste stand
+      - conditions:
+          - condition: trigger
+            id:
+              - startup
+              - auto_on
+        sequence:
+          - delay: "{{ '00:00:30' if trigger.id == 'startup' else '00:00:01' }}"
+          - choose:
+              # wind/regen -> inklappen
+              - conditions: >
+                  {{ states('sensor.meteo_waskolkweg_wind_gust')|float(0)
+                       > states('input_number.markies_wind_drempel')|float(35)
+                     or states('sensor.meteo_waskolkweg_rain_rate')|float(0) > 0 }}
+                sequence:
+                  - service: cover.open_cover
+                    target:
+                      entity_id: [cover.rolluik_1, cover.rolluik_2]
+              # mag uitvallen -> uitklappen
+              - conditions: "{{ is_state('binary_sensor.markies_mag_uitvallen','on') }}"
+                sequence:
+                  - service: cover.close_cover
+                    target:
+                      entity_id: [cover.rolluik_1, cover.rolluik_2]
+              # mag intrekken -> inklappen
+              - conditions: "{{ is_state('binary_sensor.markies_mag_intrekken','on') }}"
+                sequence:
+                  - service: cover.open_cover
+                    target:
+                      entity_id: [cover.rolluik_1, cover.rolluik_2]

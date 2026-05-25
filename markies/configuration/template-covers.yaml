@@ -1,0 +1,51 @@
+# Template-covers die de omgekeerde Shelly-stand rechtzetten voor de weergave.
+#
+# Fysieke Shelly (cover.rolluik_1/2), geverifieerd via hardware-test:
+#   open_cover  = INKLAPPEN (markies ingetrokken)   -> meldt zich als 'open'
+#   close_cover = UITKLAPPEN (markies uitgevallen)   -> meldt zich als 'closed'
+#
+# Deze template-covers draaien dat om naar intuitief (device_class awning):
+#   cover.markies_x state 'open'  = UITGEKLAPT
+#   cover.markies_x open_cover    = UITKLAPPEN  (roept fysiek close_cover aan)
+#   cover.markies_x close_cover   = INKLAPPEN   (roept fysiek open_cover aan)
+#
+# Gebruik cover.markies_1/2 op het dashboard; de automatisering stuurt de fysieke
+# cover.rolluik_1/2 rechtstreeks aan. Plaats in configuration.yaml onder cover:.
+
+cover:
+  - platform: template
+    covers:
+      markies_1:
+        device_class: awning
+        friendly_name: "Markies 1"
+        unique_id: markies_1_display
+        value_template: "{{ is_state('cover.rolluik_1', 'closed') }}"
+        open_cover:
+          - service: cover.close_cover
+            target:
+              entity_id: cover.rolluik_1
+        close_cover:
+          - service: cover.open_cover
+            target:
+              entity_id: cover.rolluik_1
+        stop_cover:
+          - service: cover.stop_cover
+            target:
+              entity_id: cover.rolluik_1
+      markies_2:
+        device_class: awning
+        friendly_name: "Markies 2"
+        unique_id: markies_2_display
+        value_template: "{{ is_state('cover.rolluik_2', 'closed') }}"
+        open_cover:
+          - service: cover.close_cover
+            target:
+              entity_id: cover.rolluik_2
+        close_cover:
+          - service: cover.open_cover
+            target:
+              entity_id: cover.rolluik_2
+        stop_cover:
+          - service: cover.stop_cover
+            target:
+              entity_id: cover.rolluik_2

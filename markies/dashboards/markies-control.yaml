@@ -1,0 +1,269 @@
+# Markies Control dashboard.
+# Maak een nieuw dashboard -> Onbewerkte configuratie-editor -> plak dit.
+# Vereist de custom card "apexcharts-card" (via HACS -> Frontend).
+title: Markies Control
+views:
+  - title: Markies Control
+    path: markies
+    icon: mdi:awning-outline
+    cards:
+      # ---- Bediening ----
+      - type: entities
+        title: Bediening
+        state_color: true
+        show_header_toggle: false
+        entities:
+          - entity: input_boolean.markies_auto
+          - type: divider
+          - entity: cover.markies_1
+            name: Markies 1
+          - entity: cover.markies_2
+            name: Markies 2
+      # ---- Snelknoppen (via template-covers: open=uitklappen, close=inklappen) ----
+      - type: horizontal-stack
+        cards:
+          - type: button
+            name: Uitklappen
+            icon: mdi:arrow-expand-down
+            tap_action:
+              action: perform-action
+              perform_action: cover.open_cover
+              target:
+                entity_id:
+                  - cover.markies_1
+                  - cover.markies_2
+          - type: button
+            name: Inklappen
+            icon: mdi:arrow-collapse-up
+            tap_action:
+              action: perform-action
+              perform_action: cover.close_cover
+              target:
+                entity_id:
+                  - cover.markies_1
+                  - cover.markies_2
+      # ---- Drempels ----
+      - type: entities
+        title: Drempels
+        entities:
+          - entity: input_number.markies_zon_drempel
+          - entity: input_number.markies_temp_drempel
+          - entity: input_number.markies_wind_drempel
+          - entity: input_number.markies_intrek_drempel
+      # ---- Wachttijden ----
+      - type: entities
+        title: Wachttijden
+        entities:
+          - entity: input_number.markies_uitval_wachttijd
+          - entity: input_number.markies_intrek_wachttijd
+          - entity: input_number.markies_regen_wachttijd
+      # ---- Zon (24u) met zon- en intrek-drempellijn ----
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Zon (24u)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - id: rad
+            min: 0
+            apex_config:
+              title:
+                text: W/m²
+          - id: uv
+            opposite: true
+            min: 0
+            max: 12
+            apex_config:
+              title:
+                text: UV
+        series:
+          - entity: sensor.meteo_waskolkweg_solar_radiation
+            name: Straling
+            yaxis_id: rad
+            type: area
+            opacity: 0.3
+            stroke_width: 2
+            group_by:
+              func: avg
+              duration: 10min
+          - entity: input_number.markies_zon_drempel
+            name: Zon-drempel
+            yaxis_id: rad
+            color: "#e53935"
+            stroke_width: 2
+            curve: stepline
+            group_by:
+              func: last
+              duration: 10min
+          - entity: input_number.markies_intrek_drempel
+            name: Intrek-drempel
+            yaxis_id: rad
+            color: "#fb8c00"
+            stroke_width: 2
+            curve: stepline
+            group_by:
+              func: last
+              duration: 10min
+          - entity: sensor.meteo_waskolkweg_uv_index
+            name: UV
+            yaxis_id: uv
+            stroke_width: 2
+            group_by:
+              func: max
+              duration: 10min
+      # ---- Temperatuur (24u) met temp-drempellijn ----
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Temperatuur (24u)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - apex_config:
+              title:
+                text: °C
+        series:
+          - entity: sensor.meteo_waskolkweg_temperature
+            name: Temperatuur
+            stroke_width: 2
+            group_by:
+              func: avg
+              duration: 10min
+          - entity: input_number.markies_temp_drempel
+            name: Temp-drempel
+            color: "#e53935"
+            stroke_width: 2
+            curve: stepline
+            group_by:
+              func: last
+              duration: 10min
+      # ---- Wind (24u) met wind-drempellijn ----
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Wind (24u)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - min: 0
+            apex_config:
+              title:
+                text: km/h
+        series:
+          - entity: sensor.meteo_waskolkweg_wind_speed
+            name: Wind
+            stroke_width: 2
+            group_by:
+              func: avg
+              duration: 10min
+          - entity: sensor.meteo_waskolkweg_wind_gust
+            name: Windstoot
+            stroke_width: 2
+            group_by:
+              func: max
+              duration: 10min
+          - entity: input_number.markies_wind_drempel
+            name: Wind-drempel
+            color: "#e53935"
+            stroke_width: 2
+            curve: stepline
+            group_by:
+              func: last
+              duration: 10min
+      # ---- Regen (24u) ----
+      - type: custom:apexcharts-card
+        header:
+          show: true
+          title: Regen (24u)
+          show_states: true
+          colorize_states: true
+        graph_span: 24h
+        yaxis:
+          - id: rate
+            min: 0
+            apex_config:
+              title:
+                text: mm/u
+          - id: sum
+            opposite: true
+            min: 0
+            apex_config:
+              title:
+                text: mm
+        series:
+          - entity: sensor.meteo_waskolkweg_rain_rate
+            name: Intensiteit
+            yaxis_id: rate
+            type: column
+            group_by:
+              func: max
+              duration: 30min
+          - entity: sensor.meteo_waskolkweg_rain_today
+            name: Totaal vandaag
+            yaxis_id: sum
+            type: line
+            stroke_width: 2
+      # ---- Automation status (respecteert echte stand) ----
+      - type: markdown
+        title: Automation status
+        content: |
+          {% set auto   = is_state('input_boolean.markies_auto','on') %}
+          {% set sun_up = is_state('sun.sun','above_horizon') %}
+          {% set rad    = states('sensor.meteo_waskolkweg_solar_radiation')|float(0) %}
+          {% set rad_t  = states('input_number.markies_zon_drempel')|float(600) %}
+          {% set in_t   = states('input_number.markies_intrek_drempel')|float(250) %}
+          {% set temp   = states('sensor.meteo_waskolkweg_temperature')|float(0) %}
+          {% set temp_t = states('input_number.markies_temp_drempel')|float(22) %}
+          {% set gust   = states('sensor.meteo_waskolkweg_wind_gust')|float(0) %}
+          {% set wind_t = states('input_number.markies_wind_drempel')|float(35) %}
+          {% set rain   = states('sensor.meteo_waskolkweg_rain_rate')|float(0) %}
+          {% set ok = auto and sun_up and rad > rad_t and temp > temp_t and gust < wind_t and rain == 0 %}
+          {% set uit = is_state('cover.markies_1','open') %}
+          | Voorwaarde | Nu | Vereist | |
+          |---|---|---|:--:|
+          | Automatisch | {{ 'aan' if auto else 'uit' }} | aan | {{ '✅' if auto else '❌' }} |
+          | Zon op | {{ 'ja' if sun_up else 'nee' }} | ja | {{ '✅' if sun_up else '❌' }} |
+          | Straling | {{ rad }} W/m² | > {{ rad_t|int }} | {{ '✅' if rad > rad_t else '❌' }} |
+          | Temperatuur | {{ temp }} °C | > {{ temp_t|int }} | {{ '✅' if temp > temp_t else '❌' }} |
+          | Windstoot | {{ gust }} km/h | < {{ wind_t|int }} | {{ '✅' if gust < wind_t else '❌' }} |
+          | Regen | {{ rain }} mm/u | = 0 | {{ '✅' if rain == 0 else '❌' }} |
+
+          {% set bu = states.binary_sensor.markies_mag_uitvallen %}
+          {% if not uit and bu is not none and bu.state == 'on' %}
+            {% set w = states('input_number.markies_uitval_wachttijd')|float(10) * 60 %}
+            {% set e = (now() - bu.last_changed).total_seconds() %}
+            {% set r = w - e %}
+          **Uitvallen:** voorwaarden groen sinds {{ (e // 60)|int }}m {{ (e % 60)|int }}s (wachttijd {{ (w / 60)|int }} min)
+            {% if r > 0 %}
+          → nog **{{ (r // 60)|int }}m {{ (r % 60)|int }}s** tot uitvallen
+            {% else %}
+          → ⏱️ **wachttijd verstreken**
+            {% endif %}
+          {% endif %}
+
+          {% set bi = states.binary_sensor.markies_mag_intrekken %}
+          {% if uit and bi is not none and bi.state == 'on' %}
+            {% set w = states('input_number.markies_intrek_wachttijd')|float(20) * 60 %}
+            {% set e = (now() - bi.last_changed).total_seconds() %}
+            {% set r = w - e %}
+          **Intrekken:** straling onder {{ in_t|int }} W/m² sinds {{ (e // 60)|int }}m {{ (e % 60)|int }}s (wachttijd {{ (w / 60)|int }} min)
+            {% if r > 0 %}
+          → nog **{{ (r // 60)|int }}m {{ (r % 60)|int }}s** tot intrekken
+            {% else %}
+          → ⏱️ **wachttijd verstreken**
+            {% endif %}
+          {% endif %}
+
+          {% if uit and (bi is none or bi.state != 'on') and (bu is none or bu.state != 'on') %}
+          **Markiezen staan uit** — wachten op intrek-voorwaarde (straling onder {{ in_t|int }} W/m², of wind/regen).
+          {% elif not uit and (bu is none or bu.state != 'on') %}
+          **Markiezen staan in** — wachten op schaduw-voorwaarde (alle eisen hierboven groen).
+          {% endif %}
+
+          **Stand:** Markies 1 = {{ 'Uitgeklapt' if is_state('cover.markies_1','open') else 'Ingeklapt' }} · Markies 2 = {{ 'Uitgeklapt' if is_state('cover.markies_2','open') else 'Ingeklapt' }}
+
+          ### {{ '🟢 Alle voorwaarden voldaan' if ok else '🔴 Nog niet alle voorwaarden voldaan' }}

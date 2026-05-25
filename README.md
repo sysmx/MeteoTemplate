@@ -20,6 +20,9 @@ zonwering-aansturing.
 - **Lovelace-dashboard** in `lovelace/weer-dashboard.yaml`
 - **Blueprint** voor automatische zonwering in
   `blueprints/automation/meteotemplate/zonwering.yaml`
+- **Markies-pakket** (`markies/`) — kant-en-klare helpers, template-sensors,
+  template-covers, automatisering en twee dashboards voor weergestuurde
+  markies-besturing (Shelly Gen4 cover-modus met richtingomkering)
 
 ## Installatie (HACS — aanbevolen)
 
@@ -77,6 +80,13 @@ instelbare wachttijd zodat een kort zonnetje niet meteen alles uitrolt.
 > **Let op:** de blueprint gaat uit van `cover.open = uitrollen/zakken` en
 > `cover.close = intrekken/omhoog`. Werkt jouw motor andersom, kies dan een
 > cover-entity waarvoor dit klopt of pas de automation na het aanmaken aan.
+
+## Markies-pakket
+
+In [`markies/`](markies/) zit een compleet, weergestuurd markies-besturings-
+pakket: helpers, template-sensors, template-covers, automatisering en twee
+dashboards (`markies-control` + `weerstation`). Volledige instructies en
+hardware-notities staan in [`markies/README.md`](markies/README.md).
 
 ## Ondersteuning
 

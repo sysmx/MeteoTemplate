@@ -1,0 +1,31 @@
+# Stabiele binary_sensors voor de markies-automatisering.
+# Deze slaan alleen om bij een echte toestandsovergang, zodat de for:-timers in de
+# automatisering strak doorlopen (geen reset bij elke sensor-update).
+# Plaats in configuration.yaml onder template: (voeg samen met bestaand template-blok).
+# Daarna: Ontwikkelhulpmiddelen -> YAML -> "Template entities" herladen.
+
+template:
+  - binary_sensor:
+      # Mag uitvallen = felle warme zon, droog en windstil
+      - name: Markies mag uitvallen
+        unique_id: markies_mag_uitvallen
+        icon: mdi:awning
+        state: >
+          {{ is_state('input_boolean.markies_auto','on')
+             and is_state('sun.sun','above_horizon')
+             and states('sensor.meteo_waskolkweg_solar_radiation')|float(0)
+                 > states('input_number.markies_zon_drempel')|float(600)
+             and states('sensor.meteo_waskolkweg_temperature')|float(0)
+                 > states('input_number.markies_temp_drempel')|float(22)
+             and states('sensor.meteo_waskolkweg_wind_gust')|float(999)
+                 < states('input_number.markies_wind_drempel')|float(35)
+             and states('sensor.meteo_waskolkweg_rain_rate')|float(0) == 0 }}
+      # Mag intrekken = zon onder horizon OF straling onder de intrek-drempel
+      - name: Markies mag intrekken
+        unique_id: markies_mag_intrekken
+        icon: mdi:awning-outline
+        state: >
+          {{ is_state('input_boolean.markies_auto','on')
+             and ( is_state('sun.sun','below_horizon')
+                   or states('sensor.meteo_waskolkweg_solar_radiation')|float(999)
+                      < states('input_number.markies_intrek_drempel')|float(250) ) }}

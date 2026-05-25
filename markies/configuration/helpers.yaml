@@ -1,0 +1,74 @@
+# Helpers voor de markies-automatisering.
+# Plaats deze blokken in configuration.yaml (of voeg de items toe aan bestaande
+# input_boolean: / input_number: blokken). Daarna: Ontwikkelhulpmiddelen -> YAML
+# -> "Input Booleans" en "Input Number" herladen (of HA herstarten).
+
+input_boolean:
+  markies_auto:
+    name: Markiezen automatisch
+    icon: mdi:robot
+
+input_number:
+  markies_zon_drempel:
+    name: Zon-drempel
+    min: 100
+    max: 1000
+    step: 25
+    initial: 500
+    unit_of_measurement: "W/m²"
+    icon: mdi:weather-sunny
+    mode: slider
+  markies_temp_drempel:
+    name: Temperatuur-drempel
+    min: 10
+    max: 35
+    step: 1
+    initial: 18
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    mode: slider
+  markies_wind_drempel:
+    name: Wind-drempel
+    min: 10
+    max: 80
+    step: 5
+    initial: 35
+    unit_of_measurement: "km/h"
+    icon: mdi:weather-windy
+    mode: slider
+  markies_intrek_drempel:
+    name: Intrek-drempel
+    min: 50
+    max: 800
+    step: 25
+    initial: 250
+    unit_of_measurement: "W/m²"
+    icon: mdi:weather-sunset-down
+    mode: slider
+  markies_uitval_wachttijd:
+    name: Wachttijd uitvallen
+    min: 0
+    max: 60
+    step: 1
+    initial: 10
+    unit_of_measurement: min
+    icon: mdi:timer-sand
+    mode: slider
+  markies_intrek_wachttijd:
+    name: Wachttijd intrekken (geen zon)
+    min: 0
+    max: 60
+    step: 1
+    initial: 20
+    unit_of_measurement: min
+    icon: mdi:timer-sand
+    mode: slider
+  markies_regen_wachttijd:
+    name: Wachttijd regen
+    min: 0
+    max: 10
+    step: 1
+    initial: 1
+    unit_of_measurement: min
+    icon: mdi:timer-sand
+    mode: slider
